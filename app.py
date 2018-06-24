@@ -52,11 +52,20 @@ class _ProblemManager:
 
     def identify_problems(self):
         url_generator = self._urls_with_problems()
-        print(self.regex['watch'][0])
+        tempList = []
         for el in url_generator:
             for reg in self.regex['watch']:
                 if re.search(reg, el["url"]):
-                    print(el)
+                    tempList.append(el)
+
+
+        finalList = []
+        for el in tempList:
+            for reg in self.regex['ignore']:
+                if not re.search(reg, el["url"]):
+                    finalList.append(el)
+
+        return finalList
 
 
 class Watcher:
@@ -73,7 +82,8 @@ class Watcher:
                 raise exc
         regex = config_file.data["websites"][0]["regex"]
         problem_manager = _ProblemManager(result, regex)
-        problem_manager.identify_problems()
+        problems = problem_manager.identify_problems()
+        print(problems)
 
 
 Watcher.run()
