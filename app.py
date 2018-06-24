@@ -4,6 +4,7 @@ import requests
 
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
+
 class _ConfigFile:
     def __init__(self, path):
         with open(path, "r") as stream:
@@ -34,9 +35,9 @@ class _ProblemManager:
     def __init__(self, pagespeed_results):
         self.pagespeed_results = pagespeed_results
 
-    def identify_problems(self):
+    def _urls_with_problems(self):
         rule_results = self.pagespeed_results["formattedResults"]["ruleResults"]
-        for k,v in rule_results.items():
+        for k, v in rule_results.items():
             if "urlBlocks" not in v:
                 continue
             for urlBlock in v["urlBlocks"]:
@@ -44,25 +45,31 @@ class _ProblemManager:
                     continue
                 for url in urlBlock["urls"]:
                     for arg in url["result"]["args"]:
-                        print(arg["value"])
+                        if arg["type"] == "URL":
+                            yield {'rule': v["localizedRuleName"], 'url': arg["value"]}
+
+    def identify_problems(self):
+        url_generator = self._urls_with_problems()
+        for el in url_generator:
+            print(el)
 
 
 class Watcher:
+    @staticmethod
+    def run():
+        # config_file = _ConfigFile("config.yml")
+        # client = _PagespeedClient("http://www.capital.fr", PAGESPEED_KEY)
+        # result = client.get_result()
 
-    def run(self):
-        CONFIGFILE = _ConfigFile("config.yml")
-        #client = _PagespeedClient("http://www.capital.fr", PAGESPEED_KEY)
-        #result = client.get_result()
+        result = None
         with open("dev/pagespeed_result.json", "r") as stream:
             try:
                 result = yaml.load(stream)
             except yaml.YAMLError as exc:
                 raise exc
-        problemManager = _ProblemManager(result)
-        problemManager.identify_problems()
+        problem_manager = _ProblemManager(result)
+        problem_manager.identify_problems()
 
 
-
-watcher = Watcher()
-watcher.run()
+Watcher.run()
 
