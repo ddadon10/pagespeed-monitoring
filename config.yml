@@ -1,6 +1,9 @@
 websites:
-  - name: "Capital"
-    url: "https://www.capital.fr/"
+  - name: 'Capital'
+    url: 'https://www.capital.fr/'
     regex:
-      - "capital.fr"
-      - "pmdstatic.net"
+      watch:
+      - 'capital\.fr'
+      - 'pmdstatic\.net'
+      ignore:
+        - 'http://www\.capital\.fr/assets/css/commons\.css'

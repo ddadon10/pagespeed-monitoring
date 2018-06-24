@@ -1,6 +1,7 @@
 import yaml
 import os
 import requests
+import re
 
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
@@ -32,8 +33,9 @@ class _PagespeedClient:
 
 
 class _ProblemManager:
-    def __init__(self, pagespeed_results):
+    def __init__(self, pagespeed_results, regex):
         self.pagespeed_results = pagespeed_results
+        self.regex = regex
 
     def _urls_with_problems(self):
         rule_results = self.pagespeed_results["formattedResults"]["ruleResults"]
@@ -50,24 +52,27 @@ class _ProblemManager:
 
     def identify_problems(self):
         url_generator = self._urls_with_problems()
+        print(self.regex['watch'][0])
         for el in url_generator:
-            print(el)
+            for reg in self.regex['watch']:
+                if re.search(reg, el["url"]):
+                    print(el)
 
 
 class Watcher:
     @staticmethod
     def run():
-        # config_file = _ConfigFile("config.yml")
+        config_file = _ConfigFile("config.yml")
         # client = _PagespeedClient("http://www.capital.fr", PAGESPEED_KEY)
         # result = client.get_result()
-
         result = None
         with open("dev/pagespeed_result.json", "r") as stream:
             try:
                 result = yaml.load(stream)
             except yaml.YAMLError as exc:
                 raise exc
-        problem_manager = _ProblemManager(result)
+        regex = config_file.data["websites"][0]["regex"]
+        problem_manager = _ProblemManager(result, regex)
         problem_manager.identify_problems()
 
 
