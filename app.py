@@ -2,6 +2,7 @@ import yaml
 import os
 import requests
 import re
+import hangouts_chat_webhook
 
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
@@ -80,10 +81,15 @@ class Watcher:
                 result = yaml.load(stream)
             except yaml.YAMLError as exc:
                 raise exc
-        regex = config_file.data["websites"][0]["regex"]
+        regex = config_file.data["websites"]["capital"]["regex"]
         problem_manager = _ProblemManager(result, regex)
         problems = problem_manager.identify_problems()
-        print(problems)
+
+        problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
+        text_message = '\n \n'.join(problems_formatted)
+        message = {"text": text_message}
+        hangouts_chat_webhook.send_message(message)
+        print(message)
 
 
 Watcher.run()
