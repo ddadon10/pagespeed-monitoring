@@ -37,7 +37,7 @@ class _ProblemManager:
     def __init__(self, pagespeed_results, regex):
         self.pagespeed_results = pagespeed_results
         self.regex = regex
-
+        self._dictProblems = None
     def _urls_with_problems(self):
         rule_results = self.pagespeed_results["formattedResults"]["ruleResults"]
         for k, v in rule_results.items():
@@ -66,7 +66,21 @@ class _ProblemManager:
                 if not re.search(reg, el["url"]):
                     finalList.append(el)
 
-        return finalList
+        self._dictProblems = finalList
+        return self._dictProblems
+
+    def get_dict_problems(self):
+        return self._dictProblems
+
+
+class _ProblemNotifier(hangouts_chat_webhook.HangoutsChatClient):
+
+    def send_problems(self, problems):
+        problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
+        text_message = '\n \n'.join(problems_formatted)
+        message = {"text": text_message}
+        print(message)
+        self.send_message(message)
 
 
 class Watcher:
@@ -84,13 +98,8 @@ class Watcher:
         regex = config_file.data["websites"]["capital"]["regex"]
         problem_manager = _ProblemManager(result, regex)
         problems = problem_manager.identify_problems()
-
-        problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
-        text_message = '\n \n'.join(problems_formatted)
-        message = {"text": text_message}
-        hangouts_chat_webhook.send_message(message)
-        print(message)
-
+        problem_notifier = _ProblemNotifier()
+        problem_notifier.send_problems(problems)
 
 Watcher.run()
 
