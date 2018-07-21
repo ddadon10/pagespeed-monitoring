@@ -1,6 +1,7 @@
-websites:
-  capital:
-    name: 'Capital'
+website:
+    meta:
+      type: 'Home'
+      name: 'Example Data - Capital'
     url: 'https://www.capital.fr/'
     regex:
       watch:
@@ -9,3 +10,4 @@ websites:
       - 'prismaconnect\.fr'
       ignore:
         - 'http://www\.capital\.fr/assets/css/commons\.css'
+    callback_url: 'callback url'

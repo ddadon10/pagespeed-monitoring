@@ -75,9 +75,10 @@ class _ProblemManager:
 
 class _ProblemNotifier(hangouts_chat_webhook.HangoutsChatClient):
 
-    def send_problems(self, problems):
+    def send_problems(self, problems, meta):
         problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
-        text_message = '\n \n'.join(problems_formatted)
+        string_problems = '\n \n'.join(problems_formatted)
+        text_message = '*' + meta['name'] + '--' + meta['type'] + '*' + '\n \n' + string_problems
         message = {"text": text_message}
         print(message)
         self.send_message(message)
@@ -85,21 +86,16 @@ class _ProblemNotifier(hangouts_chat_webhook.HangoutsChatClient):
 
 class Watcher:
     @staticmethod
-    def run():
-        config_file = _ConfigFile("config.yml")
-        # client = _PagespeedClient("http://www.capital.fr", PAGESPEED_KEY)
-        # result = client.get_result()
-        result = None
-        with open("dev/pagespeed_result.json", "r") as stream:
-            try:
-                result = yaml.load(stream)
-            except yaml.YAMLError as exc:
-                raise exc
-        regex = config_file.data["websites"]["capital"]["regex"]
+    def run(data):
+        client = _PagespeedClient(data['url'], PAGESPEED_KEY)
+        result = client.get_result()
+        regex = data['regex']
+        meta = data['meta']
         problem_manager = _ProblemManager(result, regex)
         problems = problem_manager.identify_problems()
         problem_notifier = _ProblemNotifier()
-        problem_notifier.send_problems(problems)
+        problem_notifier.send_problems(problems, meta)
 
-Watcher.run()
 
+def handler(event, context):
+    Watcher.run(event.data)
