@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pyyaml = "*"
 requests = "*"
+awscli = "*"
+aws-sam-cli = "*"
 
 [dev-packages]
 

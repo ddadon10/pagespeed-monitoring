@@ -1,19 +1,10 @@
-import yaml
 import os
 import requests
 import re
 import hangouts_chat_webhook
 
+print(os.environ)
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
-
-
-class _ConfigFile:
-    def __init__(self, path):
-        with open(path, "r") as stream:
-            try:
-                self.data = yaml.load(stream)
-            except yaml.YAMLError as exc:
-                raise exc
 
 
 class _PagespeedClient:
@@ -38,6 +29,7 @@ class _ProblemManager:
         self.pagespeed_results = pagespeed_results
         self.regex = regex
         self._dictProblems = None
+
     def _urls_with_problems(self):
         rule_results = self.pagespeed_results["formattedResults"]["ruleResults"]
         for k, v in rule_results.items():
@@ -76,9 +68,11 @@ class _ProblemManager:
 class _ProblemNotifier(hangouts_chat_webhook.HangoutsChatClient):
 
     def send_problems(self, problems, meta):
+        HELLO_MESSAGE_TEMPLATE = 'Hi ! I hope you are doing well :) \nHere is some stuff you can do on your website to improve the performance of the *{} page* of *{}*: '
         problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
         string_problems = '\n \n'.join(problems_formatted)
-        text_message = '*' + meta['name'] + '--' + meta['type'] + '*' + '\n \n' + string_problems
+        hello_message = HELLO_MESSAGE_TEMPLATE.format(meta['type'], meta['name'])
+        text_message = hello_message + '\n \n' + string_problems
         message = {"text": text_message}
         print(message)
         self.send_message(message)
@@ -91,11 +85,11 @@ class Watcher:
         result = client.get_result()
         regex = data['regex']
         meta = data['meta']
-        problem_manager = _ProblemManager(result, regex)
+        problem_manager = _ProblemManager(result.data, regex)
         problems = problem_manager.identify_problems()
         problem_notifier = _ProblemNotifier()
         problem_notifier.send_problems(problems, meta)
 
 
 def handler(event, context):
-    Watcher.run(event.data)
+    Watcher.run(event['config'])
