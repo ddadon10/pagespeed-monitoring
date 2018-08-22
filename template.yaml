@@ -16,9 +16,9 @@ Resources:
             CodeUri: dist/
             Handler: dispatcher.handler
             Runtime: python3.6
-#            Environment:
-#              Variables:
-#                PAGESPEED_KEY: test
+            Environment:
+              Variables:
+                PAGESPEED_KEY: "{Pagespeed_key}"
             Events:
                 HelloWorld:
                     Type: Schedule

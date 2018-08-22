@@ -6,15 +6,17 @@ class _ConfigFile:
     def __init__(self, path):
         with open(path, "r") as stream:
             try:
-                self.config = yaml.load(stream)
+                self.data = yaml.load(stream)
             except yaml.YAMLError as exc:
                 raise exc
 
 
 def handler(event, context):
-    #config = _ConfigFile('config.yml')
-    print(event)
-
+    config_file = _ConfigFile('config.yml')
+    config = config_file.data["websites"][event['website']]
+    print(config)
+    for el in config:
+        app.handler({"config": el}, context)
 
 # def test():
 #     config = _ConfigFile('config.yml')

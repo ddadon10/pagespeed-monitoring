@@ -1,95 +1,103 @@
 import os
-import requests
 import re
-import hangouts_chat_webhook
+from typing import Iterator
+from http.client import HTTPSConnection
+from json import dumps
 
-print(os.environ)
+import requests
+
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
 
-class _PagespeedClient:
-    def __init__(self, url, key):
-        self.url = url
-        self.key = key
-        self.result = None
+def send_message(website: dict, bot_message: dict) -> dict:
+    """
+    Send Google Hangouts Message through Webhook
+    """
+    url = website["webhook_url"]
+    message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
+    #Todo: Replace by an async https call
+    http_obj = HTTPSConnection('chat.googleapis.com')
+    response = http_obj.request(
+        url=url,
+        method='POST',
+        headers=message_headers,
+        body=dumps(bot_message),
+    )
+    return response
 
-    class _PagespeedResult:
-        def __init__(self, json):
-            self.data = json
 
-    def get_result(self):
-        payload = {"url": self.url, "key": self.key}
-        r = requests.get("https://www.googleapis.com/pagespeedonline/v4/runPagespeed", params=payload)
-        self.result = self._PagespeedResult(r.json())
-        return self.result
+def create_message(problems: dict, meta: dict) -> dict:
+    """
+    Create Message to be sent
+    """
+    HELLO_MESSAGE_TEMPLATE = 'Hi ! I hope you are doing well :) \nHere is some stuff you can do on your website to improve the performance of the *{} page* of *{}*: '
+    problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
+    string_problems = '\n \n'.join(problems_formatted)
+    hello_message = HELLO_MESSAGE_TEMPLATE.format(meta['type'], meta['name'])
+    text_message = hello_message + '\n \n' + string_problems
+    message = {"text": text_message}
+    return message
 
 
-class _ProblemManager:
-    def __init__(self, pagespeed_results, regex):
-        self.pagespeed_results = pagespeed_results
-        self.regex = regex
-        self._dictProblems = None
-
-    def _urls_with_problems(self):
-        rule_results = self.pagespeed_results["formattedResults"]["ruleResults"]
-        for k, v in rule_results.items():
-            if "urlBlocks" not in v:
+def get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
+    """
+    Get Urls with problem
+    """
+    rule_results = pagespeed_results["formattedResults"]["ruleResults"]
+    for k, v in rule_results.items():
+        if "urlBlocks" not in v:
+            continue
+        for urlBlock in v["urlBlocks"]:
+            if "urls" not in urlBlock:
                 continue
-            for urlBlock in v["urlBlocks"]:
-                if "urls" not in urlBlock:
-                    continue
-                for url in urlBlock["urls"]:
-                    for arg in url["result"]["args"]:
-                        if arg["type"] == "URL":
-                            yield {'rule': v["localizedRuleName"], 'url': arg["value"]}
-
-    def identify_problems(self):
-        url_generator = self._urls_with_problems()
-        tempList = []
-        for el in url_generator:
-            for reg in self.regex['watch']:
-                if re.search(reg, el["url"]):
-                    tempList.append(el)
+            for url in urlBlock["urls"]:
+                for arg in url["result"]["args"]:
+                    if arg["type"] == "URL":
+                        yield {'rule': v["localizedRuleName"], 'url': arg["value"]}
 
 
-        finalList = []
-        for el in tempList:
-            for reg in self.regex['ignore']:
-                if not re.search(reg, el["url"]):
-                    finalList.append(el)
+def extract_problems(urls_with_problems: Iterator, regex: dict) -> list:
+    """
+    Extract problems from a Iterator of a Google Pagespeed Result
+    """
+    url_generator = urls_with_problems()
+    temp_list = []
+    for el in url_generator:
+        for reg in regex['watch']:
+            if re.search(reg, el["url"]):
+                temp_list.append(el)
 
-        self._dictProblems = finalList
-        return self._dictProblems
+    final_list = []
+    for el in temp_list:
+        for reg in regex['ignore']:
+            if not re.search(reg, el["url"]):
+                final_list.append(el)
 
-    def get_dict_problems(self):
-        return self._dictProblems
-
-
-class _ProblemNotifier(hangouts_chat_webhook.HangoutsChatClient):
-
-    def send_problems(self, problems, meta):
-        HELLO_MESSAGE_TEMPLATE = 'Hi ! I hope you are doing well :) \nHere is some stuff you can do on your website to improve the performance of the *{} page* of *{}*: '
-        problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
-        string_problems = '\n \n'.join(problems_formatted)
-        hello_message = HELLO_MESSAGE_TEMPLATE.format(meta['type'], meta['name'])
-        text_message = hello_message + '\n \n' + string_problems
-        message = {"text": text_message}
-        print(message)
-        self.send_message(message)
+    return final_list
 
 
-class Watcher:
-    @staticmethod
-    def run(data):
-        client = _PagespeedClient(data['url'], PAGESPEED_KEY)
-        result = client.get_result()
-        regex = data['regex']
-        meta = data['meta']
-        problem_manager = _ProblemManager(result.data, regex)
-        problems = problem_manager.identify_problems()
-        problem_notifier = _ProblemNotifier()
-        problem_notifier.send_problems(problems, meta)
+def get_result(website: dict) -> dict:
+    """
+    Get the result of a Google Pagespeed Insight Analysis
+    """
+    payload = {"url": website["url"], "key": PAGESPEED_KEY}
+    #Todo: Replace by an async https call
+    r = requests.get("https://www.googleapis.com/pagespeedonline/v4/runPagespeed", params=payload)
+    result = r.json()
+    return result
+
+
+def main():
+    """
+    Main Function
+    """
+    pass
 
 
 def handler(event, context):
-    Watcher.run(event['config'])
+    """
+    Aws Lambda Handler
+    """
+    pass
+
+
