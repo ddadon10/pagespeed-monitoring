@@ -1,5 +1,6 @@
 import os
 import re
+import yaml
 from typing import Iterator
 from http.client import HTTPSConnection
 from json import dumps
@@ -9,16 +10,15 @@ import requests
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
 
-def send_message(website: dict, bot_message: dict) -> dict:
+def send_message(webhook_url: str, bot_message: dict) -> dict:
     """
     Send Google Hangouts Message through Webhook
     """
-    url = website["webhook_url"]
     message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
     #Todo: Replace by an async https call
     http_obj = HTTPSConnection('chat.googleapis.com')
     response = http_obj.request(
-        url=url,
+        url=webhook_url,
         method='POST',
         headers=message_headers,
         body=dumps(bot_message),
@@ -56,13 +56,12 @@ def get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
                         yield {'rule': v["localizedRuleName"], 'url': arg["value"]}
 
 
-def extract_problems(urls_with_problems: Iterator, regex: dict) -> list:
+def extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> list:
     """
     Extract problems from a Iterator of a Google Pagespeed Result
     """
-    url_generator = urls_with_problems()
     temp_list = []
-    for el in url_generator:
+    for el in urls_with_problems_generator:
         for reg in regex['watch']:
             if re.search(reg, el["url"]):
                 temp_list.append(el)
@@ -87,17 +86,34 @@ def get_result(website: dict) -> dict:
     return result
 
 
-def main():
+def get_config() -> dict:
+    """
+    Get the config.yml file
+    """
+    with open('config.yml', 'r') as stream:
+        try:
+            config = yaml.load(stream)
+        except yaml.YAMLError as exc:
+            raise exc
+    return config
+
+
+def main(website: dict) -> None:
     """
     Main Function
     """
-    pass
+    pagespeed_results = get_result(website)
+    urls_with_problems_generator = get_urls_with_problems(pagespeed_results)
+    problems = extract_problems(urls_with_problems_generator, website['regex'])
+    message = create_message(problems, website['meta'])
+    response = send_message(website['webhook_url'], message)
 
-
-def handler(event, context):
+def handler(event: dict, context: dict) -> None:
     """
-    Aws Lambda Handler
+    Aws lambda Handler
     """
-    pass
+    config_file = get_config()
+    main(config_file['websites']['capital'][0])
 
 
+handler({}, {})

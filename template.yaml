@@ -10,11 +10,11 @@ Globals:
 
 Resources:
 
-    DispatcherFunction:
+    AppFunction:
         Type: AWS::Serverless::Function
         Properties:
             CodeUri: dist/
-            Handler: dispatcher.handler
+            Handler: app.handler
             Runtime: python3.6
             Environment:
               Variables:
