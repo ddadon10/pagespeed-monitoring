@@ -107,9 +107,6 @@ venv.bak/
 # Jetbrains IDE
 .idea/
 
+# Config
+config/
 
-# Config file
-config.yml
-
-# Build Directory
-dist/
