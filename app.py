@@ -34,6 +34,10 @@ def _get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
     """
     Get Urls with problem
     """
+    if "error" in pagespeed_results:
+        for error in pagespeed_results["errors"]:
+            print("Error from Google Pagespeed API \n Domain: {domain} \n Reason: {reason} \n Message: {message}".format(domain=error["domain"], reason=error["reason"], message=error["message"]))
+            exit(1)
     rule_results = pagespeed_results["formattedResults"]["ruleResults"]
     for k, v in rule_results.items():
         if "urlBlocks" not in v:
@@ -76,13 +80,15 @@ def get_result(website: dict) -> dict:
     result = r.json()
     return result
 
-def _get_config() -> dict:
+
+def _get_config(path: str) -> dict:
         """
         Get the config.yml file
         """
-        with open('config.yml', 'r') as stream:
+        with open(path, 'r') as stream:
             config = json.load(stream)
         return config
+
 
 def get_filtered_result(website: dict) -> None:
     """
@@ -97,4 +103,7 @@ def get_filtered_result(website: dict) -> None:
 
 
 if __name__ == "__main__":
-    print(sys.argv)
+    path = sys.argv[1]
+    config = _get_config(path)
+    for page in config["pages"]:
+        get_filtered_result(page)

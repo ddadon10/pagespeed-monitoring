@@ -5,6 +5,7 @@ A simple tool to monitor Front-End regression using Pagespeed and Regular Expres
 
 ## Prerequisites
 Pipenv - https://pipenv.readthedocs.io/en/latest/
+
 Env variable: PAGESPEED_KEY as your Google API Key
 ## Usage
 

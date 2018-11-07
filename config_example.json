@@ -1,8 +1,10 @@
 {
   "pages": [
     {
-      "type": "Home",
-      "name": "Example",
+      "meta": {
+        "type": "Home",
+        "name": "Example"
+      },
       "url": "https://www.example.com",
       "regex": {
         "watch": [
