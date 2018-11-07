@@ -1,13 +1,19 @@
-websites:
-    capital:
-      - meta:
-          type: 'Home'
-          name: 'Example'
-        url: 'https://www.example.com/'
-        regex:
-          watch:
-          - 'http://www\.example\.com'
-          - 'example\.net'
-          ignore:
-            - 'http://www\.example\.com/resource/to/ignore\.css'
-        webhook_url: '{Google Hangouts Chat Webhook Url}'
+{
+  "pages": [
+    {
+      "type": "Home",
+      "name": "Example",
+      "url": "https://www.example.com",
+      "regex": {
+        "watch": [
+          "https://www\\.example\\.com",
+          "example\\.net"
+        ],
+        "ignore": [
+          "http://www\\.example\\.com/resource/to/ignore\\.css"
+        ]
+      },
+      "webhook_url": "{Google Hangouts Chat Webhook Url}"
+    }
+  ]
+}

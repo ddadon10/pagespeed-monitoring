@@ -1,32 +1,23 @@
 import os
 import re
-import yaml
+import json
+import sys
 from typing import Iterator
-from http.client import HTTPSConnection
-from json import dumps
 
 import requests
 
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
 
-def send_message(webhook_url: str, bot_message: dict) -> dict:
+def _send_message(webhook_url: str, bot_message: dict) -> dict:
     """
     Send Google Hangouts Message through Webhook
     """
-    message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
-    #Todo: Replace by an async https call
-    http_obj = HTTPSConnection('chat.googleapis.com')
-    response = http_obj.request(
-        url=webhook_url,
-        method='POST',
-        headers=message_headers,
-        body=dumps(bot_message),
-    )
-    return response
+    r = requests.post(webhook_url, data=json.dumps(bot_message))
+    return r.json
 
 
-def create_message(problems: dict, meta: dict) -> dict:
+def _create_message(problems: dict, meta: dict) -> dict:
     """
     Create Message to be sent
     """
@@ -39,7 +30,7 @@ def create_message(problems: dict, meta: dict) -> dict:
     return message
 
 
-def get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
+def _get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
     """
     Get Urls with problem
     """
@@ -56,7 +47,7 @@ def get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
                         yield {'rule': v["localizedRuleName"], 'url': arg["value"]}
 
 
-def extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> list:
+def _extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> list:
     """
     Extract problems from a Iterator of a Google Pagespeed Result
     """
@@ -80,40 +71,30 @@ def get_result(website: dict) -> dict:
     Get the result of a Google Pagespeed Insight Analysis
     """
     payload = {"url": website["url"], "key": PAGESPEED_KEY}
-    #Todo: Replace by an async https call
+
     r = requests.get("https://www.googleapis.com/pagespeedonline/v4/runPagespeed", params=payload)
     result = r.json()
     return result
 
+def _get_config() -> dict:
+        """
+        Get the config.yml file
+        """
+        with open('config.yml', 'r') as stream:
+            config = json.load(stream)
+        return config
 
-def get_config() -> dict:
-    """
-    Get the config.yml file
-    """
-    with open('config.yml', 'r') as stream:
-        try:
-            config = yaml.load(stream)
-        except yaml.YAMLError as exc:
-            raise exc
-    return config
-
-
-def main(website: dict) -> None:
+def get_filtered_result(website: dict) -> None:
     """
     Main Function
     """
     pagespeed_results = get_result(website)
-    urls_with_problems_generator = get_urls_with_problems(pagespeed_results)
-    problems = extract_problems(urls_with_problems_generator, website['regex'])
-    message = create_message(problems, website['meta'])
-    response = send_message(website['webhook_url'], message)
-
-def handler(event: dict, context: dict) -> None:
-    """
-    Aws lambda Handler
-    """
-    config_file = get_config()
-    main(config_file['websites']['capital'][0])
+    urls_with_problems_generator = _get_urls_with_problems(pagespeed_results)
+    problems = _extract_problems(urls_with_problems_generator, website['regex'])
+    message = _create_message(problems, website['meta'])
+    response = _send_message(website['webhook_url'], message)
+    print(response)
 
 
-handler({}, {})
+if __name__ == "__main__":
+    print(sys.argv)

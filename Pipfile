@@ -4,11 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pyyaml = "*"
 requests = "*"
-awscli = "*"
-aws-sam-cli = "*"
-
 [dev-packages]
 
 [requires]
