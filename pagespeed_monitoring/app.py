@@ -6,28 +6,29 @@ from typing import Iterator
 
 import requests
 
+from pagespeed_monitoring import hangouts_chat_webhook
+
 PAGESPEED_KEY = os.environ["PAGESPEED_KEY"]
 
 
-def _send_message(webhook_url: str, bot_message: dict) -> dict:
+def _get_config(path: str) -> dict:
     """
-    Send Google Hangouts Message through Webhook
+    Get the config.yml file
     """
-    r = requests.post(webhook_url, data=json.dumps(bot_message))
-    return r.json
+    with open(path, 'r') as stream:
+        config = json.load(stream)
+    return config
 
 
-def _create_message(problems: dict, meta: dict) -> dict:
+def _get_result(website: dict) -> dict:
     """
-    Create Message to be sent
+    Get the result of a Google Pagespeed Insight Analysis
     """
-    HELLO_MESSAGE_TEMPLATE = 'Hi ! I hope you are doing well :) \nHere is some stuff you can do on your website to improve the performance of the *{} page* of *{}*: '
-    problems_formatted = ['*' + problem['rule'] + '*' + ' on ' + problem['url'] for problem in problems]
-    string_problems = '\n \n'.join(problems_formatted)
-    hello_message = HELLO_MESSAGE_TEMPLATE.format(meta['type'], meta['name'])
-    text_message = hello_message + '\n \n' + string_problems
-    message = {"text": text_message}
-    return message
+    payload = {"url": website["url"], "key": PAGESPEED_KEY}
+
+    r = requests.get("https://www.googleapis.com/pagespeedonline/v4/runPagespeed", params=payload)
+    result = r.json()
+    return result
 
 
 def _get_urls_with_problems(pagespeed_results: dict) -> Iterator[dict]:
@@ -58,7 +59,11 @@ def _extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> li
     temp_list = []
     for el in urls_with_problems_generator:
         for reg in regex['watch']:
-            if re.search(reg, el["url"]):
+            # In JSON we need to escape backslash with a backslash
+            # so here we replace double backslash to normal backslash
+            regex = reg.replace("\\", "")
+
+            if re.search(regex, el["url"]):
                 temp_list.append(el)
 
     final_list = []
@@ -70,40 +75,19 @@ def _extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> li
     return final_list
 
 
-def get_result(website: dict) -> dict:
-    """
-    Get the result of a Google Pagespeed Insight Analysis
-    """
-    payload = {"url": website["url"], "key": PAGESPEED_KEY}
-
-    r = requests.get("https://www.googleapis.com/pagespeedonline/v4/runPagespeed", params=payload)
-    result = r.json()
-    return result
-
-
-def _get_config(path: str) -> dict:
-        """
-        Get the config.yml file
-        """
-        with open(path, 'r') as stream:
-            config = json.load(stream)
-        return config
-
-
-def get_filtered_result(website: dict) -> None:
+def get_filtered_result(website: dict) -> list:
     """
     Main Function
     """
-    pagespeed_results = get_result(website)
+    pagespeed_results = _get_result(website)
     urls_with_problems_generator = _get_urls_with_problems(pagespeed_results)
     problems = _extract_problems(urls_with_problems_generator, website['regex'])
-    message = _create_message(problems, website['meta'])
-    response = _send_message(website['webhook_url'], message)
-    print(response)
+    return problems
 
 
 if __name__ == "__main__":
     path = sys.argv[1]
     config = _get_config(path)
     for page in config["pages"]:
-        get_filtered_result(page)
+        problems = get_filtered_result(page)
+        hangouts_chat_webhook(problems, page)
