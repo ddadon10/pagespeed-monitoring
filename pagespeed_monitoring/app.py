@@ -59,21 +59,19 @@ def _extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> li
     temp_list = []
     for el in urls_with_problems_generator:
         for reg in regex['watch']:
-            # In JSON we need to escape backslash with a backslash
-            # so here we replace double backslash to normal backslash
-            regex = reg.replace("\\", "")
-
-            if re.search(regex, el["url"]):
+            if re.search(reg, el["url"]):
                 temp_list.append(el)
 
-    final_list = []
-    for el in temp_list:
-        for reg in regex['ignore']:
-            if not re.search(reg, el["url"]):
-                final_list.append(el)
+    if len(regex['ignore']) == 0:
+        final_list = temp_list
+    else:
+        final_list = []
+        for el in temp_list:
+            for reg in regex['ignore']:
+                if not re.search(reg, el["url"]):
+                    final_list.append(el)
 
     return final_list
-
 
 def get_filtered_result(website: dict) -> list:
     """
@@ -90,4 +88,4 @@ if __name__ == "__main__":
     config = _get_config(path)
     for page in config["pages"]:
         problems = get_filtered_result(page)
-        hangouts_chat_webhook(problems, page)
+        hangouts_chat_webhook.main(problems, page)

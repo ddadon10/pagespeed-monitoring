@@ -2,7 +2,6 @@
 
 A simple tool to monitor Front-End regression using Pagespeed and Regular Expressions.
 
-
 ## Prerequisites
 Pipenv - https://pipenv.readthedocs.io/en/latest/
 
@@ -16,6 +15,6 @@ pipenv shell
 
 2) Launch the script with a config as first argument
 ```bash
-python app.py config/{website}.json
+python -m pagespeed_monitoring.app config/{website}.json
 ```
 

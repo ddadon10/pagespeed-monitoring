@@ -1,0 +1,19 @@
+{
+  "pages": [
+    {
+      "meta": {
+        "type": "Home",
+        "name": "Capital"
+      },
+      "url": "https://www.capital.fr",
+      "regex": {
+        "watch": [
+          "https://www\\.capital\\.fr",
+          "https://tra\\.scds\\.pmdstatic\\.net"
+        ],
+        "ignore": []
+      },
+      "webhook_url": ""
+    }
+  ]
+}

@@ -24,7 +24,7 @@ def _send_message(webhook_url: str, bot_message: dict) -> dict:
     return r.json
 
 
-def hangouts_chat_webhook(problems: dict, page: dict) -> None:
+def main(problems: dict, page: dict) -> None:
     message = _create_message(problems, page['meta'])
     response = _send_message(page['webhook_url'], message)
 
