@@ -1,12 +1,12 @@
 # Pagespeed Monitoring
 
-A simple tool to monitor Front-End regression using the API of Google Pagespeed Insight (https://developers.google.com/speed/pagespeed/insights/) and Regular Expressions.
+A simple tool to monitor Front-End regression using the API of [Google Pagespeed Insight](https://developers.google.com/speed/pagespeed/insights/) and Regular Expressions.
 
 Very useful for media company because many of the suggestions of the Google Pagespeed Insight service are flooded with resources not directly managed by the publisher (Advertising, Tracking etc...) 
 
 This tool use regex to filter these resources and get a cleaner report with only suggestions on specifc resources pattern, so you can take directly take action.
 
-This tool has a Google Hangouts Chat (https://gsuite.google.com/products/chat/) hook that give you this kind of message:
+This tool has a [Google Hangouts Chat](https://gsuite.google.com/products/chat/) hook that give you this kind of message:
 
 ![screenshot](https://raw.githubusercontent.com/dadon-david/pagespeed-monitoring/master/img/screenshot.png)
 
