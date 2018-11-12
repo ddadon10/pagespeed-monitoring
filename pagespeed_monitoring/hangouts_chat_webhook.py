@@ -3,7 +3,7 @@ import json
 import requests
 
 
-def _create_message(problems: dict, meta: dict) -> dict:
+def _create_message(problems: list, meta: dict) -> dict:
     """
     Create Message to be sent
     """
@@ -16,16 +16,15 @@ def _create_message(problems: dict, meta: dict) -> dict:
     return message
 
 
-def _send_message(webhook_url: str, bot_message: dict) -> dict:
+def _send_message(webhook_url: str, bot_message: dict) -> None:
     """
     Send Google Hangouts Message through Webhook
     """
-    r = requests.post(webhook_url, data=json.dumps(bot_message))
-    return r.json
+    # Todo: Log if there is a problem with the request
+    requests.post(webhook_url, data=json.dumps(bot_message))
 
 
-def main(problems: dict, page: dict) -> None:
+def main(problems: list, page: dict) -> None:
     message = _create_message(problems, page['meta'])
-    response = _send_message(page['webhook_url'], message)
-
+    _send_message(page['webhook_url'], message)
 

@@ -73,6 +73,7 @@ def _extract_problems(urls_with_problems_generator: Iterator, regex: dict) -> li
 
     return final_list
 
+
 def get_filtered_result(website: dict) -> list:
     """
     Main Function
